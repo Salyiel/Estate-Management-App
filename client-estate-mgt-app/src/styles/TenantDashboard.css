@@ -1,0 +1,102 @@
+/* Global styles */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f1f5f9;
+    margin: 0;
+    padding: 0;
+  }
+  
+  /* Layout */
+  .container {
+    display: flex;
+  }
+  
+  .sidebar {
+    width: 220px;
+    background-color: #1f2937;
+    padding: 1rem;
+    height: 100vh;
+  }
+  
+  .sidebar ul {
+    list-style: none;
+    padding: 0;
+  }
+  
+  .sidebar ul li {
+    margin: 1rem 0;
+  }
+  
+  .sidebar ul li a {
+    color: white;
+    text-decoration: none;
+    font-size: 18px;
+    display: block;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+  }
+  
+  .sidebar ul li a:hover {
+    background-color: #374151;
+  }
+  
+  .main-content {
+    flex: 1;
+    padding: 2rem;
+  }
+
+/* Card styles */
+/* Card styles with hover effect */
+.card {
+    background-color: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    margin-bottom: 2rem;
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  }
+  
+  .card:hover {
+    transform: translateY(-5px) scale(1.02); /* Slightly move up and enlarge */
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2); /* Enhanced shadow */
+  }
+  
+  
+  /* Personal Information, Billing Details, Payment History sections */
+  .card h2 {
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 1rem;
+  }
+  
+  .card p {
+    font-size: 16px;
+    margin: 0.5rem 0;
+  }
+  
+  .card .billing-details p {
+    line-height: 1.5;
+  }
+  
+  /* Payment History Table */
+  .table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+  }
+  
+  .table th,
+  .table td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  
+  .table th {
+    font-weight: bold;
+  }
+  
+  .table td {
+    font-size: 16px;
+  }
+  
