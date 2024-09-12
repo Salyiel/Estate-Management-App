@@ -17,6 +17,7 @@ passlib = "*"
 cryptography = "*"
 pyotp = "*"
 flask-cors = "*"
+flask-migrate = "*"
 
 [dev-packages]
 
