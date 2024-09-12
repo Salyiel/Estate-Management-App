@@ -1,19 +1,43 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import '../styles/Dashboards.css';
 import { CSVLink } from 'react-csv';
+import axios from 'axios';
 
 const ManagerReports = () => {
-  // Sample data for tenants and staff
-  const tenantData = [
-    { id: 1, name: "John Doe", email: "john.doe@example.com", billingHistory: "$1200" },
-    { id: 2, name: "Jane Smith", email: "jane.smith@example.com", billingHistory: "$1300" }
-  ];
+  const [tenantData, setTenantData] = useState([]);
+  const [staffData, setStaffData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const staffData = [
-    { id: 1, name: "Michael Johnson", shift: "9:00 AM - 5:00 PM", hoursWorked: "8 hours" },
-    { id: 2, name: "Emily Davis", shift: "10:00 AM - 6:00 PM", hoursWorked: "8 hours" }
-  ];
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const token = localStorage.getItem('access_token'); // Adjust if using different method for token storage
+        
+        const tenantResponse = await axios.get('/api/tenants', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        const staffResponse = await axios.get('/api/staff', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        setTenantData(tenantResponse.data);
+        setStaffData(staffResponse.data);
+      } catch (err) {
+        setError(err.response?.data?.message || 'An error occurred while fetching data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   // CSV headers and data for tenants and staff
   const tenantHeaders = [
@@ -48,12 +72,17 @@ const ManagerReports = () => {
         <div className="card">
           <h2>Reports</h2>
 
+          {/* Loading and Error Handling */}
+          {loading && <p>Loading...</p>}
+          {error && <p className="error-message">{error}</p>}
+
           {/* CSV Download Buttons */}
           <CSVLink
             data={tenantData}
             headers={tenantHeaders}
             filename="tenant_report.csv"
             className="checkin-btn"
+            disabled={loading}
           >
             Download Tenant Report
           </CSVLink>
@@ -64,6 +93,7 @@ const ManagerReports = () => {
             filename="staff_report.csv"
             className="checkin-btn"
             style={{ marginLeft: '10px' }}
+            disabled={loading}
           >
             Download Staff Report
           </CSVLink>

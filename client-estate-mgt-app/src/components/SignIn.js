@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import "../styles/SignIn.css"; // Import the CSS file
+import axios from "axios";
+import "../styles/SignIn.css"; 
 
 const SignIn = () => {
   const [email, setEmail] = useState("");
@@ -9,30 +10,24 @@ const SignIn = () => {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    try {
+      const response = await axios.post("/api/login", {
+        email,
+        password,
+        otp,
+      });
 
-    // Mocked backend user data for validation
-    const mockUserData = {
-      email: "john.doe@example.com",
-      password: "password123",
-      otp: "123456",
-      position: "manager",
-    };
-
-    if (
-      email === mockUserData.email &&
-      password === mockUserData.password &&
-      otp === mockUserData.otp
-    ) {
-      if (mockUserData.position === "manager") {
+      const { data } = response;
+      if (data.position === "manager") {
         navigate("/manager");
-      } else if (mockUserData.position === "tenant") {
+      } else if (data.position === "tenant") {
         navigate("/tenant");
-      } else if (mockUserData.position === "employee") {
+      } else if (data.position === "staff") {
         navigate("/staff");
       }
-    } else {
+    } catch (err) {
       setError("Invalid email, password, or OTP.");
     }
   };

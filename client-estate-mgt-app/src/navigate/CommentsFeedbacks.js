@@ -1,12 +1,36 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import axios from 'axios';
 
 const CommentsFeedbacks = () => {
   const [feedback, setFeedback] = useState("");
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
 
-  const handleFeedbackSubmit = (e) => {
+  const handleFeedbackSubmit = async (e) => {
     e.preventDefault();
-    console.log("Feedback Submitted:", feedback);
+
+    try {
+      const token = localStorage.getItem('access_token'); // Adjust if using different method for token storage
+
+      const response = await axios.post(
+        '/api/feedback',
+        { feedback },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      setMessage(response.data.message);
+      setFeedback(""); // Clear feedback input
+      setError(""); // Clear any previous error
+    } catch (err) {
+      setError(err.response?.data?.message || 'An error occurred');
+      setMessage(""); // Clear any previous success message
+    }
   };
 
   return (
@@ -38,6 +62,8 @@ const CommentsFeedbacks = () => {
               Submit Feedback
             </button>
           </form>
+          {message && <p className="success-message">{message}</p>}
+          {error && <p className="error-message">{error}</p>}
         </div>
       </div>
     </div>

@@ -1,18 +1,29 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import io from 'socket.io-client';
+
+const socket = io('http://localhost:5000'); // Replace with your server URL
 
 const Notifications = () => {
-  const notifications = [
+  const [notifications, setNotifications] = useState([
     { id: 1, message: "Rent is due on the 1st of this month." },
     { id: 2, message: "Your electricity bill is due on the 15th." },
-    { id: 3, message: (
-          <>
-          "Your Wi-Fi has been paid. Click 
-          <a href="/download link">here</a> to download receipt."
-          </>
-        ) 
-   },
-  ];
+  ]);
+
+  useEffect(() => {
+    // Listen for 'notification' events from the server
+    socket.on('notification', (data) => {
+      setNotifications((prevNotifications) => [
+        ...prevNotifications,
+        data,
+      ]);
+    });
+
+    // Clean up on component unmount
+    return () => {
+      socket.off('notification');
+    };
+  }, []);
 
   return (
     <div className="container">
@@ -34,7 +45,7 @@ const Notifications = () => {
           <ul>
             {notifications.map((notification) => (
               <li key={notification.id} className="mb-2">
-                {notification.message}
+                <span dangerouslySetInnerHTML={{ __html: notification.message }} />
               </li>
             ))}
           </ul>

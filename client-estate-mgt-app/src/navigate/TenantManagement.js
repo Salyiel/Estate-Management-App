@@ -1,8 +1,28 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import '../styles/Pages.css';
+import axios from 'axios';
 
 const TenantManagement = () => {
+  const [tenants, setTenants] = useState([]);
+
+  useEffect(() => {
+    const fetchTenants = async () => {
+      try {
+        const response = await axios.get('/api/tenants', {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}` // Assuming you're storing the JWT token in localStorage
+          }
+        });
+        setTenants(response.data);
+      } catch (error) {
+        console.error('Error fetching tenants:', error);
+      }
+    };
+
+    fetchTenants();
+  }, []);
+
   return (
     <div className="container">
       {/* Sidebar */}
@@ -29,16 +49,19 @@ const TenantManagement = () => {
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td>John Doe</td>
-                <td>john.doe@example.com</td>
-                <td>$1200</td>
-              </tr>
-              <tr>
-                <td>Jane Smith</td>
-                <td>jane.smith@example.com</td>
-                <td>$1300</td>
-              </tr>
+              {tenants.length > 0 ? (
+                tenants.map(tenant => (
+                  <tr key={tenant.id}>
+                    <td>{tenant.name}</td>
+                    <td>{tenant.email}</td>
+                    <td>${tenant.billingHistory}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="3">No tenants found</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

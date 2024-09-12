@@ -1,18 +1,50 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import axios from 'axios';
 import '../styles/Pages.css';
 
 const TaskManagement = () => {
-  const [tasks, setTasks] = useState([
-    { id: 1, name: 'Clean common areas', status: 'Pending' },
-    { id: 2, name: 'Assist manager with meeting', status: 'Completed' },
-  ]);
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const updateTaskStatus = (taskId, newStatus) => {
-    setTasks(tasks.map(task =>
-      task.id === taskId ? { ...task, status: newStatus } : task
-    ));
+  useEffect(() => {
+    const fetchTasks = async () => {
+      try {
+        const response = await axios.get('/api/tasks', {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('accessToken')}` // Add JWT token if required
+          }
+        });
+        setTasks(response.data);
+      } catch (error) {
+        setError('Failed to fetch tasks');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTasks();
+  }, []);
+
+  const updateTaskStatus = async (taskId, newStatus) => {
+    try {
+      await axios.patch(`/api/tasks/${taskId}`, { status: newStatus }, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('accessToken')}` // Add JWT token if required
+        }
+      });
+      setTasks(tasks.map(task =>
+        task.id === taskId ? { ...task, status: newStatus } : task
+      ));
+    } catch (error) {
+      setError('Failed to update task status');
+    }
   };
+
+  if (loading) {
+    return <p>Loading...</p>;
+  }
 
   return (
     <div className="container">
@@ -31,16 +63,26 @@ const TaskManagement = () => {
       <div className="main-content">
         <div className="card">
           <h2>Task Management</h2>
+          {error && <p className="text-red-500">{error}</p>}
           <ul className="task-list">
-            {tasks.map(task => (
-              <li key={task.id} className="task-item">
-                <p><strong>Task:</strong> {task.name}</p>
-                <p><strong>Status:</strong> {task.status}</p>
-                <button onClick={() => updateTaskStatus(task.id, 'Completed')}>
-                  Mark as Completed
-                </button>
-              </li>
-            ))}
+            {tasks.length > 0 ? (
+              tasks.map(task => (
+                <li key={task.id} className="task-item">
+                  <p><strong>Task:</strong> {task.name}</p>
+                  <p><strong>Status:</strong> {task.status}</p>
+                  {task.status !== 'Completed' && (
+                    <button
+                      onClick={() => updateTaskStatus(task.id, 'Completed')}
+                      className="py-2 px-4 bg-green-500 text-white rounded"
+                    >
+                      Mark as Completed
+                    </button>
+                  )}
+                </li>
+              ))
+            ) : (
+              <li>No tasks available</li>
+            )}
           </ul>
         </div>
       </div>

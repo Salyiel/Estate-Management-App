@@ -1,8 +1,8 @@
 import React from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import LandingPage from "./components/LandingPage";
-import SignIn from "./components/SignIn";
 import SignUp from "./components/SignUp";
+import SignIn from "./components/SignIn";
 import TenantDashboard from "./components/TenantDashboard";
 import StaffDashboard from "./components/StaffDashboard";
 import ManagerDashboard from "./components/ManagerDashboard";
@@ -24,8 +24,8 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<LandingPage />} />
-        <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
+        <Route path="/signin" element={<SignIn />} />
         <Route path="/tenant" element={<TenantDashboard />} />
         <Route path="/staff" element={<StaffDashboard />} />
         <Route path="/manager" element={<ManagerDashboard />} />

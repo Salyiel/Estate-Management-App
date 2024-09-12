@@ -1,4 +1,4 @@
-from flask_sqlalchemy import SQLAlchemy
+from flask_sqlalchemy import SQLAlchemy  # type: ignore
 from datetime import datetime
 
 db = SQLAlchemy()
@@ -32,7 +32,7 @@ class House(db.Model):
     estate_id = db.Column(db.Integer, db.ForeignKey('estate.id'), nullable=False)
 
     tenants = db.relationship('Tenant', backref='house', lazy=True)
-    maintenance_requests = db.relationship('Request', backref='house', lazy=True)
+    maintenance_requests = db.relationship('MaintenanceRequest', backref='house', lazy=True)
 
 # Tenant Model
 class Tenant(db.Model):
@@ -59,22 +59,22 @@ class Staff(db.Model):
     check_ins = db.relationship('CheckIn', backref='staff', lazy=True)
 
 # Maintenance Request Model
-class Request(db.Model):
-    __tablename__ = 'requests'
+class MaintenanceRequest(db.Model):
+    __tablename__ = 'maintenance_requests'
     id = db.Column(db.Integer, primary_key=True)
-    request_description = db.Column(db.Text, nullable=False)
+    description = db.Column(db.Text, nullable=False)
     status = db.Column(db.String(20), nullable=False, default='Pending')
     date_submitted = db.Column(db.DateTime, default=datetime.utcnow)
     house_id = db.Column(db.Integer, db.ForeignKey('house.id'), nullable=False)
 
-    tasks = db.relationship('Task', backref='request', lazy=True)
+    tasks = db.relationship('Task', backref='maintenance_request', lazy=True)
 
-# Tasks Model (Many-to-Many between Staff and Requests)
+# Tasks Model (Many-to-Many between Staff and Maintenance Requests)
 class Task(db.Model):
     __tablename__ = 'tasks'
     id = db.Column(db.Integer, primary_key=True)
     staff_id = db.Column(db.Integer, db.ForeignKey('staff.id'), nullable=False)
-    request_id = db.Column(db.Integer, db.ForeignKey('requests.id'), nullable=False)
+    maintenance_request_id = db.Column(db.Integer, db.ForeignKey('maintenance_requests.id'), nullable=False)
 
 # Payment Model
 class Payment(db.Model):
@@ -100,3 +100,41 @@ class CheckIn(db.Model):
     check_in_time = db.Column(db.DateTime, nullable=True)
     check_out_time = db.Column(db.DateTime, nullable=True)
     staff_id = db.Column(db.Integer, db.ForeignKey('staff.id'), nullable=False)
+
+
+class Request(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    body = db.Column(db.String(500), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'body': self.body,
+            'created_at': self.created_at.isoformat()
+        }
+
+class CommentFeedback(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    body = db.Column(db.String(500), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'body': self.body,
+            'created_at': self.created_at.isoformat()
+        }
+
+class Message(db.Model):
+    __tablename__ = 'message'
+    id = db.Column(db.Integer, primary_key=True)
+    body = db.Column(db.String(500), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'body': self.body,
+            'created_at': self.created_at.isoformat()
+        }

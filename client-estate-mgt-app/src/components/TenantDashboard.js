@@ -1,18 +1,39 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import '../styles/TenantDashboard.css';
 import { Link } from 'react-router-dom';
+import axios from 'axios';
 
 const TenantDashboard = () => {
+  const [tenantInfo, setTenantInfo] = useState({});
+  const [paymentHistory, setPaymentHistory] = useState([]);
+
+  useEffect(() => {
+    // Fetch tenant information and payment history from the backend
+    const fetchTenantData = async () => {
+      try {
+        const tenantResponse = await axios.get('/api/tenant'); // Replace with the correct endpoint
+        setTenantInfo(tenantResponse.data);
+
+        const paymentResponse = await axios.get('/api/payments'); // Replace with the correct endpoint
+        setPaymentHistory(paymentResponse.data);
+      } catch (error) {
+        console.error('Error fetching tenant data:', error);
+      }
+    };
+
+    fetchTenantData();
+  }, []);
+
   return (
     <div className="container">
       {/* Sidebar */}
       <nav className="sidebar">
         <ul>
-            <li><Link to="/tenant">Dashboard</Link></li>
-            <li><Link to="/payment">Payments</Link></li>
-            <li><Link to="/request">Requests</Link></li>
-            <li><Link to="/comment">Comments & Feedbacks</Link></li>
-            <li><Link to="/notification">Notifications</Link></li>
+          <li><Link to="/tenant">Dashboard</Link></li>
+          <li><Link to="/payment">Payments</Link></li>
+          <li><Link to="/request">Requests</Link></li>
+          <li><Link to="/comment">Comments & Feedbacks</Link></li>
+          <li><Link to="/notification">Notifications</Link></li>
         </ul>
       </nav>
 
@@ -21,9 +42,9 @@ const TenantDashboard = () => {
         {/* Personal Information */}
         <div className="card">
           <h2>Personal Information</h2>
-          <p><strong>Name:</strong> John Doe</p>
-          <p><strong>Email:</strong> john.doe@example.com</p>
-          <p><strong>Phone:</strong> (123) 456-7890</p>
+          <p><strong>Name:</strong> {tenantInfo.name || 'Loading...'}</p>
+          <p><strong>Email:</strong> {tenantInfo.email || 'Loading...'}</p>
+          <p><strong>Phone:</strong> {tenantInfo.phone || 'Loading...'}</p>
         </div>
 
         {/* Billing Details */}
@@ -46,21 +67,19 @@ const TenantDashboard = () => {
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td>2023-09-01</td>
-                <td>Rent</td>
-                <td>$1200</td>
-              </tr>
-              <tr>
-                <td>2023-09-15</td>
-                <td>Electricity</td>
-                <td>$150</td>
-              </tr>
-              <tr>
-                <td>2023-09-20</td>
-                <td>Wi-Fi</td>
-                <td>$50</td>
-              </tr>
+              {paymentHistory.length > 0 ? (
+                paymentHistory.map(payment => (
+                  <tr key={payment.id}>
+                    <td>{payment.date}</td>
+                    <td>{payment.description}</td>
+                    <td>${payment.amount}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="3">No payment history available</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

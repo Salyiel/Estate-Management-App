@@ -1,9 +1,44 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import '../styles/Dashboards.css';
 import { Link } from 'react-router-dom';
-
+import axios from 'axios';
 
 const ManagerDashboard = () => {
+  const [tenants, setTenants] = useState([]);
+  const [staff, setStaff] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const tenantsResponse = await axios.get('/api/tenants', {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+          }
+        });
+        setTenants(tenantsResponse.data);
+
+        const staffResponse = await axios.get('/api/staff', {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+          }
+        });
+        setStaff(staffResponse.data);
+
+        setLoading(false);
+      } catch (err) {
+        setError('Failed to fetch data');
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  if (loading) return <p>Loading...</p>;
+  if (error) return <p>{error}</p>;
+
   return (
     <div className="dashboard-container">
       {/* Sidebar */}
@@ -22,8 +57,8 @@ const ManagerDashboard = () => {
         {/* Comprehensive Dashboard Section */}
         <div className="section">
           <h2>Comprehensive Dashboard</h2>
-          <p><strong>Total Tenants:</strong> 50</p>
-          <p><strong>Staff Members:</strong> 10</p>
+          <p><strong>Total Tenants:</strong> {tenants.length}</p>
+          <p><strong>Staff Members:</strong> {staff.length}</p>
           <p><strong>Open Maintenance Requests:</strong> 5</p>
         </div>
 
@@ -40,18 +75,14 @@ const ManagerDashboard = () => {
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td>101</td>
-                <td>John Doe</td>
-                <td>john.doe@example.com</td>
-                <td>$1200</td>
-              </tr>
-              <tr>
-                <td>102</td>
-                <td>Jane Smith</td>
-                <td>jane.smith@example.com</td>
-                <td>$1300</td>
-              </tr>
+              {tenants.map(tenant => (
+                <tr key={tenant.id}>
+                  <td>{tenant.houseNo}</td>
+                  <td>{tenant.name}</td>
+                  <td>{tenant.email}</td>
+                  <td>{tenant.billingHistory}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
@@ -69,18 +100,14 @@ const ManagerDashboard = () => {
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td>1</td>
-                <td>Michael Johnson</td>
-                <td>9:00 AM - 5:00 PM</td>
-                <td>8 hours</td>
-              </tr>
-              <tr>
-                <td>2</td>
-                <td>Emily Davis</td>
-                <td>10:00 AM - 6:00 PM</td>
-                <td>8 hours</td>
-              </tr>
+              {staff.map(member => (
+                <tr key={member.id}>
+                  <td>{member.id}</td>
+                  <td>{member.name}</td>
+                  <td>{member.shift}</td>
+                  <td>{member.hoursWorked}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>

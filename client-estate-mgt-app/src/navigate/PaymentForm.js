@@ -1,14 +1,39 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import axios from 'axios';
 
 const PaymentForm = () => {
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState("");
   const [paymentType, setPaymentType] = useState("rent"); // Default to "rent"
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
-  const handlePayment = (e) => {
+  const handlePayment = async (e) => {
     e.preventDefault();
-    console.log("Payment Type:", paymentType, "Amount:", amount, "Due Date:", date);
+
+    try {
+      // Replace with your actual API endpoint
+      const response = await axios.post('/api/payments', {
+        amount,
+        date,
+        paymentType
+      }, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('accessToken')}` // Add JWT token if required
+        }
+      });
+
+      // Handle the response, e.g., show a success message or redirect
+      console.log("Payment Response:", response.data);
+      setSuccess('Payment processed successfully');
+      setError(''); // Clear any previous errors
+    } catch (error) {
+      // Handle error, e.g., show an error message
+      console.error("Payment Error:", error);
+      setError('Failed to process payment');
+      setSuccess(''); // Clear any previous success messages
+    }
   };
 
   return (
@@ -18,8 +43,8 @@ const PaymentForm = () => {
           <li><Link to="/tenant">Dashboard</Link></li>
           <li><Link to="/payment">Payments</Link></li>
           <li><Link to="/request">Requests</Link></li>
-            <li><Link to="/comment">Comments & Feedbacks</Link></li>
-            <li><Link to="/notification">Notifications</Link></li>
+          <li><Link to="/comment">Comments & Feedbacks</Link></li>
+          <li><Link to="/notification">Notifications</Link></li>
         </ul>
       </nav>
       <div className="main-content">
@@ -38,11 +63,13 @@ const PaymentForm = () => {
               <option value="wifi">WiFi</option>
             </select>
             <input
-              type="text"
+              type="number"
+              step="0.01"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="Amount"
               className="w-full p-2 mb-2 border rounded"
+              required
             />
             <input
               type="date"
@@ -50,10 +77,13 @@ const PaymentForm = () => {
               onChange={(e) => setDate(e.target.value)}
               placeholder="Due Date"
               className="w-full p-2 mb-2 border rounded"
+              required
             />
             <button type="submit" className="w-full py-2 px-4 bg-indigo-600 text-white rounded">
               Pay Now
             </button>
+            {success && <p className="text-green-500 mt-2">{success}</p>}
+            {error && <p className="text-red-500 mt-2">{error}</p>}
           </form>
         </div>
       </div>

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import '../styles/SignUp.css'; // Add this line to import the CSS
+import { useNavigate } from "react-router-dom"; // Import useNavigate
+import '../styles/SignUp.css';
 
 const SignUp = () => {
   const [name, setName] = useState("");
@@ -7,9 +8,30 @@ const SignUp = () => {
   const [password, setPassword] = useState("");
   const [position, setPosition] = useState("tenant");
 
+  const navigate = useNavigate(); // Initialize useNavigate
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Sign Up:", { name, email, password, position });
+
+    const userData = { name, email, password, position };
+    console.log("Sign Up:", userData);
+
+    fetch("http://localhost:5000/api/signup", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(userData),
+    })
+      .then((response) => {
+        if (response.ok) {
+          console.log("User signed up successfully");
+          navigate("/signin"); // Redirect to Sign-In page
+        } else {
+          console.log("Failed to sign up");
+        }
+      })
+      .catch((error) => console.error("Error:", error));
   };
 
   return (

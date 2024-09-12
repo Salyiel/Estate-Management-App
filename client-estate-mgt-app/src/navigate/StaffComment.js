@@ -1,12 +1,29 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import axios from 'axios';
 
 const CommentsFeedbacks = () => {
   const [feedback, setFeedback] = useState("");
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
-  const handleFeedbackSubmit = (e) => {
+  const handleFeedbackSubmit = async (e) => {
     e.preventDefault();
-    console.log("Feedback Submitted:", feedback);
+
+    try {
+      await axios.post('/api/comments', { body: feedback }, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('accessToken')}` // Add JWT token if required
+        }
+      });
+
+      setSuccess('Feedback submitted successfully');
+      setError(''); // Clear any previous errors
+      setFeedback(''); // Clear the feedback textarea
+    } catch (error) {
+      setError('Failed to submit feedback');
+      setSuccess(''); // Clear any previous success messages
+    }
   };
 
   return (
@@ -37,6 +54,8 @@ const CommentsFeedbacks = () => {
             <button type="submit" className="w-full py-2 px-4 bg-indigo-600 text-white rounded">
               Submit Feedback
             </button>
+            {success && <p className="text-green-500 mt-2">{success}</p>}
+            {error && <p className="text-red-500 mt-2">{error}</p>}
           </form>
         </div>
       </div>
