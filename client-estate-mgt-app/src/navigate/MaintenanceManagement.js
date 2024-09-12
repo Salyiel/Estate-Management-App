@@ -13,7 +13,7 @@ const MaintenanceManagement = () => {
       try {
         const token = localStorage.getItem('access_token'); // Adjust if using different method for token storage
         
-        const response = await axios.get('/api/maintenance', {
+        const response = await axios.get('/maintenance', {
           headers: {
             'Authorization': `Bearer ${token}`
           }

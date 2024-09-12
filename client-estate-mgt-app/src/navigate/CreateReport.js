@@ -15,13 +15,13 @@ const ManagerReports = () => {
       try {
         const token = localStorage.getItem('access_token'); // Adjust if using different method for token storage
         
-        const tenantResponse = await axios.get('/api/tenants', {
+        const tenantResponse = await axios.get('/tenants', {
           headers: {
             'Authorization': `Bearer ${token}`
           }
         });
         
-        const staffResponse = await axios.get('/api/staff', {
+        const staffResponse = await axios.get('/staff', {
           headers: {
             'Authorization': `Bearer ${token}`
           }

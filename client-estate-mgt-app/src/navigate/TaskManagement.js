@@ -11,7 +11,7 @@ const TaskManagement = () => {
   useEffect(() => {
     const fetchTasks = async () => {
       try {
-        const response = await axios.get('/api/tasks', {
+        const response = await axios.get('/tasks', {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('accessToken')}` // Add JWT token if required
           }

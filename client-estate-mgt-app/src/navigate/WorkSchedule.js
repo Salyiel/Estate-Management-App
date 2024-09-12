@@ -9,7 +9,7 @@ const WorkSchedule = () => {
   useEffect(() => {
     const fetchSchedule = async () => {
       try {
-        const response = await axios.get('/api/work-schedule', {
+        const response = await axios.get('/work-schedule', {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('token')}` // JWT token from localStorage
           }

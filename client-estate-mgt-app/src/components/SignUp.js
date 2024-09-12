@@ -16,7 +16,7 @@ const SignUp = () => {
     const userData = { name, email, password, position };
     console.log("Sign Up:", userData);
 
-    fetch("http://localhost:5000/api/signup", {
+    fetch("http://localhost:5000/signup", {  // Updated URL
       method: "POST",
       headers: {
         "Content-Type": "application/json",

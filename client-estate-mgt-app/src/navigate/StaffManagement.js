@@ -11,7 +11,7 @@ const StaffManagement = () => {
   useEffect(() => {
     const fetchStaff = async () => {
       try {
-        const response = await axios.get('/api/staff', {
+        const response = await axios.get('/staff', {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('accessToken')}` // Add JWT token if required
           }

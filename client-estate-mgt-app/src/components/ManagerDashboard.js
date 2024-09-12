@@ -12,14 +12,14 @@ const ManagerDashboard = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const tenantsResponse = await axios.get('/api/tenants', {
+        const tenantsResponse = await axios.get('/tenants', {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('accessToken')}`
           }
         });
         setTenants(tenantsResponse.data);
 
-        const staffResponse = await axios.get('/api/staff', {
+        const staffResponse = await axios.get('/staff', {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('accessToken')}`
           }

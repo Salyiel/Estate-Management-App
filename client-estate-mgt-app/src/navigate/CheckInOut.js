@@ -13,7 +13,7 @@ const CheckInOut = () => {
   useEffect(() => {
     const fetchStatus = async () => {
       try {
-        const response = await axios.get('/api/check-in-status', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
+        const response = await axios.get('/check-in-status', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
         setCheckedIn(response.data.checkedIn);
         setCheckedOut(response.data.checkedOut);
       } catch (err) {

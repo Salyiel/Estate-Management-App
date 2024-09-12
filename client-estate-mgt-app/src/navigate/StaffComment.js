@@ -11,7 +11,7 @@ const CommentsFeedbacks = () => {
     e.preventDefault();
 
     try {
-      await axios.post('/api/comments', { body: feedback }, {
+      await axios.post('/comments', { body: feedback }, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('accessToken')}` // Add JWT token if required
         }

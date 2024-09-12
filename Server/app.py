@@ -7,10 +7,12 @@ from flask_mail import Mail, Message
 from flask_socketio import SocketIO, emit
 from datetime import timedelta
 from flask_cors import CORS
+from twilio.rest import Client
 import os
+import random
  
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
 
 # Configure Database
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///estate_management.db'
@@ -26,6 +28,12 @@ app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')  # Replace with yo
 app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')  # Replace with your email password
 app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER', 'your_email@gmail.com')
 
+
+# Twilio configuration (replace with your own credentials)
+account_sid = os.environ.get('TWILIO_ACCOUNT_SID')  # Twilio account SID
+auth_token = os.environ.get('TWILIO_AUTH_TOKEN')    # Twilio auth token
+twilio_phone = os.environ.get('TWILIO_PHONE')       # Your Twilio phone number
+
 # Initialize extensions
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
@@ -33,11 +41,10 @@ bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
 mail = Mail(app)
 socketio = SocketIO(app)
-
+client = Client(account_sid, auth_token)
 
 # Import models
 from models import Manager, Estate, House, Tenant, Staff, Request, Task, Payment, Receipt, CheckIn, MaintenanceRequest, Message, CommentFeedback
-
 
 # Route to create manager
 @app.route('/manager', methods=['POST'])
@@ -51,44 +58,86 @@ def create_manager():
     return jsonify({'message': 'Manager created successfully'}), 201
 
 # Signup Route
-@app.route('/api/signup', methods=['POST'])
+@app.route('/signup', methods=['POST'])  # Changed from '/api/signup' to '/signup'
 def signup():
     data = request.get_json()
-    
+
     # Extracting data from the request
     name = data.get('name')
     email = data.get('email')
     password = data.get('password')
     position = data.get('position')
 
-    # You can add your user creation logic here (e.g., save to the database)
+    # User creation logic
     new_user = Manager(name=name, email=email, password=bcrypt.generate_password_hash(password).decode('utf-8'), position=position)
     db.session.add(new_user)
     db.session.commit()
-    
+
     return jsonify({'message': 'User created successfully'}), 201
 
 
-# Login route with JWT
-@app.route('/login', methods=['POST'])
-def login():
+# OTP generation function
+def generate_otp():
+    return str(random.randint(100000, 999999))
+
+# Route to generate and send OTP
+@app.route('/send-otp', methods=['POST'])
+def send_otp():
+    data = request.get_json()
+    phone = data.get('phone')
+
+    if not phone:
+        return jsonify({'error': 'Phone number is required'}), 400
+
+    otp = generate_otp()
+
+    # Send OTP to phone number using Twilio
+    try:
+        message = client.messages.create(
+            body=f'Your OTP is {otp}',
+            from_=twilio_phone,
+            to=phone
+        )
+        # Store the OTP in the database or cache (here we simulate it with an in-memory variable)
+        manager = Manager.query.filter_by(phone=phone).first()
+        if manager:
+            manager.otp = otp  # Store OTP temporarily
+            db.session.commit()
+
+        return jsonify({'message': 'OTP sent successfully'}), 200
+    except Exception as e:
+        return jsonify({'error': 'Failed to send OTP', 'details': str(e)}), 500
+
+
+# Sign-in route to verify OTP
+@app.route('/signin', methods=['POST'])
+def signin():
     data = request.get_json()
     email = data.get('email')
-    phone = data.get('phone')  # Simulate OTP sent to phone
-    # Here you would verify the OTP sent to the phone
+    password = data.get('password')
+    otp = data.get('otp')  # OTP provided by the user
 
-    if not email or not phone:
-        return jsonify({'message': 'Invalid data'}), 400
-
+    # Validate email and password
     manager = Manager.query.filter_by(email=email).first()
-    if not manager:
+
+    if not manager or not bcrypt.check_password_hash(manager.password, password):
         return jsonify({'message': 'Invalid credentials'}), 401
 
+    # Check OTP
+    if manager.otp != otp:
+        return jsonify({'message': 'Invalid OTP'}), 401
+
+    # OTP is valid, create a JWT token
     access_token = create_access_token(identity={'email': manager.email})
-    return jsonify(access_token=access_token)
+
+    # Clear OTP after successful login
+    manager.otp = None
+    db.session.commit()
+
+    return jsonify(access_token=access_token), 200
 
 # Endpoint to get tenant information
-@app.route('/api/tenants', methods=['GET'])
+@app.route('/tenants', methods=['GET'])
 @jwt_required()
 def get_tenants():
     tenants = Tenant.query.all()
@@ -102,7 +151,7 @@ def get_tenants():
     return jsonify(tenant_list)
 
 # Endpoint to get staff information
-@app.route('/api/staff', methods=['GET'])
+@app.route('/staff', methods=['GET'])
 @jwt_required()
 def get_staff():
     staff = Staff.query.all()
@@ -115,12 +164,10 @@ def get_staff():
 
     return jsonify(staff_list)
 
-
 # Endpoint to get work schedule for a specific staff member
-@app.route('/api/work-schedule', methods=['GET'])
+@app.route('/work-schedule', methods=['GET'])
 @jwt_required()
 def get_work_schedule():
-    # Assuming staff_id is the identity stored in JWT during login
     staff_id = get_jwt_identity()
     
     staff = Staff.query.filter_by(id=staff_id).first()
@@ -134,7 +181,7 @@ def get_work_schedule():
         return jsonify({"error": "No work schedule found for this staff member"}), 404
 
 # Endpoint to get maintenance requests
-@app.route('/api/maintenance', methods=['GET'])
+@app.route('/maintenance', methods=['GET'])
 @jwt_required()
 def get_maintenance_requests():
     requests = MaintenanceRequest.query.all()
@@ -146,9 +193,8 @@ def get_maintenance_requests():
 
     return jsonify(request_list)
 
-
 # Endpoint to handle payments
-@app.route('/api/payments', methods=['POST'])
+@app.route('/payments', methods=['POST'])
 @jwt_required()
 def create_payment():
     data = request.get_json()
@@ -171,16 +217,13 @@ def create_payment():
         'paymentType': new_payment.payment_type
     }), 201
 
-
 # Message routes
 @app.route('/messages', methods=['GET', 'POST'])
 def messages():
-    # Handle GET request: Return all messages
     if request.method == 'GET':
         messages = Message.query.order_by(Message.created_at.asc()).all()
         return jsonify([message.to_dict() for message in messages]), 200
 
-    # Handle POST request: Create a new message
     elif request.method == 'POST':
         data = request.get_json()
 
@@ -191,21 +234,17 @@ def messages():
         db.session.add(new_message)
         db.session.commit()
 
-        # Emit the new message to all connected clients
         socketio.emit('notification', new_message.to_dict(), broadcast=True)
 
         return jsonify(new_message.to_dict()), 201
 
 @app.route('/messages/<int:id>', methods=['GET', 'PATCH', 'DELETE'])
 def messages_by_id(id):
-    # Fetch the message by ID
     message = Message.query.get_or_404(id)
 
-    # Handle GET request: Return the message as JSON
     if request.method == 'GET':
         return jsonify(message.to_dict()), 200
 
-    # Handle PATCH request: Update the message body
     elif request.method == 'PATCH':
         data = request.get_json()
         if 'body' not in data:
@@ -214,21 +253,18 @@ def messages_by_id(id):
         db.session.commit()
         return jsonify(message.to_dict()), 200
 
-    # Handle DELETE request: Delete the message
     elif request.method == 'DELETE':
         db.session.delete(message)
         db.session.commit()
         return jsonify({"message": "Message deleted"}), 200
-    
 
-@app.route('/api/requests', methods=['GET', 'POST'])
+# Maintenance request routes
+@app.route('/requests', methods=['GET', 'POST'])
 def requests():
-    # Handle GET request: Return all requests
     if request.method == 'GET':
         requests = Request.query.order_by(Request.created_at.desc()).all()
         return jsonify([req.to_dict() for req in requests]), 200
 
-    # Handle POST request: Create a new request
     elif request.method == 'POST':
         data = request.get_json()
         if 'body' not in data:
@@ -240,7 +276,7 @@ def requests():
 
         return jsonify(new_request.to_dict()), 201
 
-@app.route('/api/requests/<int:id>', methods=['GET', 'DELETE'])
+@app.route('/requests/<int:id>', methods=['GET', 'DELETE'])
 def request_by_id(id):
     request = Request.query.get_or_404(id)
 
@@ -252,15 +288,13 @@ def request_by_id(id):
         db.session.commit()
         return jsonify({"message": "Request deleted"}), 200
 
-
-@app.route('/api/comments', methods=['GET', 'POST'])
+# Comments/Feedback routes
+@app.route('/comments', methods=['GET', 'POST'])
 def comments():
-    # Handle GET request: Return all comments/feedback
     if request.method == 'GET':
         comments = CommentFeedback.query.all()
         return jsonify([comment.to_dict() for comment in comments]), 200
 
-    # Handle POST request: Create a new comment/feedback
     elif request.method == 'POST':
         data = request.get_json()
         if 'body' not in data:
@@ -270,7 +304,7 @@ def comments():
         db.session.add(new_comment)
         db.session.commit()
 
-        return jsonify(new_comment.to_dict()), 201
-
+        return jsonify(new_comment.to_dict)
+    
 if __name__ == '__main__':
     socketio.run(app, debug=True)

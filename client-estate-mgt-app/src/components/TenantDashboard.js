@@ -11,10 +11,10 @@ const TenantDashboard = () => {
     // Fetch tenant information and payment history from the backend
     const fetchTenantData = async () => {
       try {
-        const tenantResponse = await axios.get('/api/tenant'); // Replace with the correct endpoint
+        const tenantResponse = await axios.get('/tenants'); // Replace with the correct endpoint
         setTenantInfo(tenantResponse.data);
 
-        const paymentResponse = await axios.get('/api/payments'); // Replace with the correct endpoint
+        const paymentResponse = await axios.get('/payments'); // Replace with the correct endpoint
         setPaymentHistory(paymentResponse.data);
       } catch (error) {
         console.error('Error fetching tenant data:', error);

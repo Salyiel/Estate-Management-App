@@ -13,7 +13,7 @@ const ManagerReports = () => {
     setError(null);
 
     try {
-      const response = await axios.get('/api/reports');  // Update this endpoint based on your Flask route
+      const response = await axios.get('/reports');  // Update this endpoint based on your Flask route
       setReportData(response.data);
     } catch (err) {
       setError('Failed to fetch report');

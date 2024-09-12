@@ -11,7 +11,7 @@ const Requests = () => {
     e.preventDefault();
 
     try {
-      const response = await axios.post('/api/requests', { body: request }, {
+      const response = await axios.post('/requests', { body: request }, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('accessToken')}` // Add JWT token if required
         }

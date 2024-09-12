@@ -9,7 +9,7 @@ const TenantManagement = () => {
   useEffect(() => {
     const fetchTenants = async () => {
       try {
-        const response = await axios.get('/api/tenants', {
+        const response = await axios.get('/tenants', {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('token')}` // Assuming you're storing the JWT token in localStorage
           }

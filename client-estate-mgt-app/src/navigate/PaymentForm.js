@@ -14,7 +14,7 @@ const PaymentForm = () => {
 
     try {
       // Replace with your actual API endpoint
-      const response = await axios.post('/api/payments', {
+      const response = await axios.post('/payments', {
         amount,
         date,
         paymentType
