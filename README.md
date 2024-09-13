@@ -42,59 +42,60 @@ The Estate Management System is a full-stack web application designed to streaml
 ### **Backend Setup**
 
 1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/yourusername/estate-management-system.git
-   cd estate-management-system/server
-   ```
+   ```bash
+   git clone https://github.com/yourusername/estate-management-system.git
+   cd estate-management-system/server
+   ```
 
 2. **Create a virtual environment:**
-   ```bash
-   python3 -m venv venv
-   source venv/bin/activate  # On Windows use `venv\Scripts\activate`
-   ```
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate  # On Windows use `venv\Scripts\activate`
+   ```
 
 3. **Install the dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
+   ```bash
+   pip install -r requirements.txt
+   ```
 
 4. **Setup the database:**
-   ```bash
-   flask db init
-   flask db migrate -m "Initial migration."
-   flask db upgrade
-   ```
+   ```bash
+   flask db init
+   flask db migrate -m "Initial migration."
+   flask db upgrade
+   ```
 
 5. **Run the Flask development server:**
-   ```bash
-   flask run
-   ```
+   ```bash
+   flask run
+   ```
 
 ### **Frontend Setup**
 
 1. **Navigate to the client directory:**
-   ```bash
-   cd ../client
-   ```
+   ```bash
+   cd ../client
+   ```
 
 2. **Install the dependencies:**
-   ```bash
-   npm install
-   ```
+   ```bash
+   npm install
+   ```
 
 3. **Start the React development server:**
-   ```bash
-   npm start
-   ```
+   ```bash
+   npm start
+   ```
 
 ### **Real-time Notifications Setup**
+
 To enable real-time notifications using WebSockets:
 
 1. **Ensure `Flask-SocketIO` is installed in your backend environment.**
 
 2. **Update your Flask app to use SocketIO as shown in the backend setup.**
 
-3. **Make sure to include the SocketIO client in your React app.**
+3. **Include the SocketIO client in your React app.**
 
 ### **Environment Variables**
 
@@ -118,14 +119,14 @@ MAIL_USE_TLS=1
 To run tests:
 
 1. **Navigate to the backend directory:**
-   ```bash
-   cd backend
-   ```
+   ```bash
+   cd backend
+   ```
 
 2. **Run the tests:**
-   ```bash
-   pytest
-   ```
+   ```bash
+   pytest
+   ```
 
 ## **MVP (Minimum Viable Product)**
 
@@ -168,3 +169,5 @@ To run tests:
 ## **License**
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
