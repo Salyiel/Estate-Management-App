@@ -12,11 +12,11 @@ const SignUp = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
-    const userData = { name, email, password, position };
+  
+    const userData = { name, email, password, position }; // Include phone if necessary
     console.log("Sign Up:", userData);
-
-    fetch("http://localhost:5000/signup", {  // Updated URL
+  
+    fetch("/signup", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

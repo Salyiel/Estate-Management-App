@@ -28,7 +28,7 @@ const CheckInOut = () => {
 
   const handleCheckIn = async () => {
     try {
-      await axios.post('/api/check-in', {}, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
+      await axios.post('/check-in', {}, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
       setCheckedIn(true);
       setCheckedOut(false);
     } catch (err) {
@@ -38,7 +38,7 @@ const CheckInOut = () => {
 
   const handleCheckOut = async () => {
     try {
-      await axios.post('/api/check-out', {}, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
+      await axios.post('/check-out', {}, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
       setCheckedOut(true);
       setCheckedIn(false);
     } catch (err) {

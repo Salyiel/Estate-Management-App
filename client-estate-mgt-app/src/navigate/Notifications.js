@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import io from 'socket.io-client';
 
-const socket = io('http://localhost:5000'); // Replace with your server URL
+const socket = io('http://localhost:5555'); // Replace with your server URL
 
 const Notifications = () => {
   const [notifications, setNotifications] = useState([

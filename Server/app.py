@@ -2,49 +2,44 @@ from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_bcrypt import Bcrypt
-from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from flask_mail import Mail, Message
 from flask_socketio import SocketIO, emit
-from datetime import timedelta
+from datetime import datetime
 from flask_cors import CORS
-from twilio.rest import Client
 import os
 import random
- 
+
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
+CORS(app)
 
 # Configure Database
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///estate_management.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'supersecretkey')
-app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=1)
 
 # Email Configuration
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')  # Replace with your email
-app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')  # Replace with your email password
+app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
+app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
 app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER', 'your_email@gmail.com')
-
-
-# Twilio configuration (replace with your own credentials)
-account_sid = os.environ.get('TWILIO_ACCOUNT_SID')  # Twilio account SID
-auth_token = os.environ.get('TWILIO_AUTH_TOKEN')    # Twilio auth token
-twilio_phone = os.environ.get('TWILIO_PHONE')       # Your Twilio phone number
 
 # Initialize extensions
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 bcrypt = Bcrypt(app)
-jwt = JWTManager(app)
 mail = Mail(app)
-socketio = SocketIO(app)
-client = Client(account_sid, auth_token)
+socketio = SocketIO(app,  cors_allowed_origins="http://localhost:3000")
 
 # Import models
 from models import Manager, Estate, House, Tenant, Staff, Request, Task, Payment, Receipt, CheckIn, MaintenanceRequest, Message, CommentFeedback
+
+# Welcome route
+@app.route('/')
+def welcome():
+    return jsonify({'message': 'Welcome to the Estate Management App!'})
+
+# Other routes
 
 # Route to create manager
 @app.route('/manager', methods=['POST'])
@@ -58,18 +53,21 @@ def create_manager():
     return jsonify({'message': 'Manager created successfully'}), 201
 
 # Signup Route
-@app.route('/signup', methods=['POST'])  # Changed from '/api/signup' to '/signup'
+@app.route('/signup', methods=['POST'])
 def signup():
     data = request.get_json()
 
     # Extracting data from the request
-    name = data.get('name')
     email = data.get('email')
     password = data.get('password')
     position = data.get('position')
 
     # User creation logic
-    new_user = Manager(name=name, email=email, password=bcrypt.generate_password_hash(password).decode('utf-8'), position=position)
+    new_user = Manager(
+        email=email, 
+        password=bcrypt.generate_password_hash(password).decode('utf-8'), 
+        # phone=data.get('phone'),  # Ensure phone is also included in request data
+    )
     db.session.add(new_user)
     db.session.commit()
 
@@ -84,22 +82,21 @@ def generate_otp():
 @app.route('/send-otp', methods=['POST'])
 def send_otp():
     data = request.get_json()
-    phone = data.get('phone')
+    email = data.get('email')
 
-    if not phone:
-        return jsonify({'error': 'Phone number is required'}), 400
+    if not email:
+        return jsonify({'error': 'Email is required'}), 400
 
     otp = generate_otp()
 
-    # Send OTP to phone number using Twilio
+    # Send OTP to email
     try:
-        message = client.messages.create(
-            body=f'Your OTP is {otp}',
-            from_=twilio_phone,
-            to=phone
-        )
+        msg = Message("Your OTP Code", recipients=[email])
+        msg.body = f'Your OTP is {otp}'
+        mail.send(msg)
+
         # Store the OTP in the database or cache (here we simulate it with an in-memory variable)
-        manager = Manager.query.filter_by(phone=phone).first()
+        manager = Manager.query.filter_by(email=email).first()
         if manager:
             manager.otp = otp  # Store OTP temporarily
             db.session.commit()
@@ -107,7 +104,6 @@ def send_otp():
         return jsonify({'message': 'OTP sent successfully'}), 200
     except Exception as e:
         return jsonify({'error': 'Failed to send OTP', 'details': str(e)}), 500
-
 
 # Sign-in route to verify OTP
 @app.route('/signin', methods=['POST'])
@@ -128,17 +124,16 @@ def signin():
         return jsonify({'message': 'Invalid OTP'}), 401
 
     # OTP is valid, create a JWT token
-    access_token = create_access_token(identity={'email': manager.email})
+    # access_token = create_access_token(identity={'email': manager.email})
 
     # Clear OTP after successful login
     manager.otp = None
     db.session.commit()
 
-    return jsonify(access_token=access_token), 200
+    return jsonify({'message': 'Sign in successful'}), 200
 
 # Endpoint to get tenant information
 @app.route('/tenants', methods=['GET'])
-@jwt_required()
 def get_tenants():
     tenants = Tenant.query.all()
     tenant_list = [{
@@ -152,7 +147,6 @@ def get_tenants():
 
 # Endpoint to get staff information
 @app.route('/staff', methods=['GET'])
-@jwt_required()
 def get_staff():
     staff = Staff.query.all()
     staff_list = [{
@@ -166,9 +160,8 @@ def get_staff():
 
 # Endpoint to get work schedule for a specific staff member
 @app.route('/work-schedule', methods=['GET'])
-@jwt_required()
 def get_work_schedule():
-    staff_id = get_jwt_identity()
+    staff_id = request.args.get('staff_id')
     
     staff = Staff.query.filter_by(id=staff_id).first()
     if staff:
@@ -179,10 +172,51 @@ def get_work_schedule():
         return jsonify(schedule), 200
     else:
         return jsonify({"error": "No work schedule found for this staff member"}), 404
+    
+# CheckinStatus route
+@app.route('/check-in-status', methods=['GET'])
+def check_in_status():
+    staff_id = request.args.get('staff_id')
+    latest_checkin = CheckIn.query.filter_by(staff_id=staff_id).order_by(CheckIn.id.desc()).first()
+    
+    if latest_checkin:
+        checked_in = latest_checkin.check_in_time is not None and latest_checkin.check_out_time is None
+        checked_out = latest_checkin.check_out_time is not None
+        return jsonify({'checkedIn': checked_in, 'checkedOut': checked_out}), 200
+    else:
+        return jsonify({'checkedIn': False, 'checkedOut': False}), 200
+
+# CheckIn Route
+@app.route('/check-in', methods=['POST'])
+def check_in():
+    staff_id = request.json.get('staff_id')
+    latest_checkin = CheckIn.query.filter_by(staff_id=staff_id).order_by(CheckIn.id.desc()).first()
+    
+    if latest_checkin and latest_checkin.check_in_time and latest_checkin.check_out_time is None:
+        return jsonify({'error': 'Already checked in'}), 400
+
+    new_checkin = CheckIn(staff_id=staff_id, check_in_time=datetime.utcnow())
+    db.session.add(new_checkin)
+    db.session.commit()
+
+    return jsonify({'message': 'Checked in successfully'}), 200
+
+# Checkout Route
+@app.route('/check-out', methods=['POST'])
+def check_out():
+    staff_id = request.json.get('staff_id')
+    latest_checkin = CheckIn.query.filter_by(staff_id=staff_id).order_by(CheckIn.id.desc()).first()
+
+    if not latest_checkin or latest_checkin.check_out_time is not None:
+        return jsonify({'error': 'No active check-in found'}), 400
+
+    latest_checkin.check_out_time = datetime.utcnow()
+    db.session.commit()
+
+    return jsonify({'message': 'Checked out successfully'}), 200
 
 # Endpoint to get maintenance requests
 @app.route('/maintenance', methods=['GET'])
-@jwt_required()
 def get_maintenance_requests():
     requests = MaintenanceRequest.query.all()
     request_list = [{
@@ -195,7 +229,6 @@ def get_maintenance_requests():
 
 # Endpoint to handle payments
 @app.route('/payments', methods=['POST'])
-@jwt_required()
 def create_payment():
     data = request.get_json()
 
@@ -218,93 +251,35 @@ def create_payment():
     }), 201
 
 # Message routes
-@app.route('/messages', methods=['GET', 'POST'])
-def messages():
-    if request.method == 'GET':
-        messages = Message.query.order_by(Message.created_at.asc()).all()
-        return jsonify([message.to_dict() for message in messages]), 200
+@app.route('/messages', methods=['GET'])
+def get_messages():
+    messages = Message.query.all()
+    messages_list = [{'id': message.id, 'content': message.content, 'author': message.author, 'timestamp': message.timestamp} for message in messages]
+    return jsonify(messages_list), 200
 
-    elif request.method == 'POST':
-        data = request.get_json()
+@app.route('/messages', methods=['POST'])
+def post_message():
+    data = request.get_json()
+    new_message = Message(content=data['content'], author=data['author'], timestamp=datetime.utcnow())
+    db.session.add(new_message)
+    db.session.commit()
 
-        if 'body' not in data or 'username' not in data:
-            return jsonify({"error": "Body and username are required"}), 400
+    # Notify via SocketIO
+    socketio.emit('new_message', {'content': new_message.content, 'author': new_message.author, 'timestamp': new_message.timestamp.strftime('%Y-%m-%d %H:%M:%S')})
+    return jsonify({'message': 'Message posted successfully'}), 201
 
-        new_message = Message(body=data['body'], username=data['username'])
-        db.session.add(new_message)
-        db.session.commit()
+# Comment Feedback route
+@app.route('/feedback', methods=['POST'])
+def post_feedback():
+    data = request.get_json()
+    new_feedback = CommentFeedback(
+        comment=data['comment'], feedback_type=data['feedbackType'], timestamp=datetime.utcnow()
+    )
+    db.session.add(new_feedback)
+    db.session.commit()
 
-        socketio.emit('notification', new_message.to_dict(), broadcast=True)
+    return jsonify({'message': 'Feedback submitted successfully'}), 201
 
-        return jsonify(new_message.to_dict()), 201
-
-@app.route('/messages/<int:id>', methods=['GET', 'PATCH', 'DELETE'])
-def messages_by_id(id):
-    message = Message.query.get_or_404(id)
-
-    if request.method == 'GET':
-        return jsonify(message.to_dict()), 200
-
-    elif request.method == 'PATCH':
-        data = request.get_json()
-        if 'body' not in data:
-            return jsonify({"error": "Body is required"}), 400
-        message.body = data['body']
-        db.session.commit()
-        return jsonify(message.to_dict()), 200
-
-    elif request.method == 'DELETE':
-        db.session.delete(message)
-        db.session.commit()
-        return jsonify({"message": "Message deleted"}), 200
-
-# Maintenance request routes
-@app.route('/requests', methods=['GET', 'POST'])
-def requests():
-    if request.method == 'GET':
-        requests = Request.query.order_by(Request.created_at.desc()).all()
-        return jsonify([req.to_dict() for req in requests]), 200
-
-    elif request.method == 'POST':
-        data = request.get_json()
-        if 'body' not in data:
-            return jsonify({"error": "Request body is required"}), 400
-
-        new_request = Request(body=data['body'])
-        db.session.add(new_request)
-        db.session.commit()
-
-        return jsonify(new_request.to_dict()), 201
-
-@app.route('/requests/<int:id>', methods=['GET', 'DELETE'])
-def request_by_id(id):
-    request = Request.query.get_or_404(id)
-
-    if request.method == 'GET':
-        return jsonify(request.to_dict()), 200
-
-    elif request.method == 'DELETE':
-        db.session.delete(request)
-        db.session.commit()
-        return jsonify({"message": "Request deleted"}), 200
-
-# Comments/Feedback routes
-@app.route('/comments', methods=['GET', 'POST'])
-def comments():
-    if request.method == 'GET':
-        comments = CommentFeedback.query.all()
-        return jsonify([comment.to_dict() for comment in comments]), 200
-
-    elif request.method == 'POST':
-        data = request.get_json()
-        if 'body' not in data:
-            return jsonify({"error": "Comment body is required"}), 400
-
-        new_comment = CommentFeedback(body=data['body'])
-        db.session.add(new_comment)
-        db.session.commit()
-
-        return jsonify(new_comment.to_dict)
-    
+# Run app with SocketIO
 if __name__ == '__main__':
     socketio.run(app, debug=True)

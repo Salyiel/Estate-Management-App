@@ -8,7 +8,11 @@ class Manager(db.Model):
     __tablename__ = 'manager'
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(100), nullable=False, unique=True)
-    phone = db.Column(db.String(20), nullable=False)
+    # phone = db.Column(db.String(20), nullable=False)
+    password = db.Column(db.String(120), nullable=False)
+    otp = db.Column(db.String(6), nullable=True) 
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    name = db.Column(db.String(100), nullable=False)  # Add this line
 
     estates = db.relationship('Estate', backref='manager', lazy=True)
 
@@ -138,3 +142,19 @@ class Message(db.Model):
             'body': self.body,
             'created_at': self.created_at.isoformat()
         }
+    
+# class CheckIn(db.Model):
+#     id = db.Column(db.Integer, primary_key=True)
+#     staff_id = db.Column(db.Integer, db.ForeignKey('staff.id'), nullable=False)
+#     check_in_time = db.Column(db.DateTime, nullable=True)
+#     check_out_time = db.Column(db.DateTime, nullable=True)
+
+#     staff = db.relationship('Staff', backref=db.backref('checkins', lazy=True))
+
+#     def to_dict(self):
+#         return {
+#             'id': self.id,
+#             'staff_id': self.staff_id,
+#             'check_in_time': self.check_in_time,
+#             'check_out_time': self.check_out_time
+#         }
