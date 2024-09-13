@@ -4,10 +4,10 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-flask-sqlalchemy = "*"
-flask = "*"
+flask-sqlalchemy = "==2.5.1"
+flask = "=="
 cors = "*"
-sqlalchemy = "*"
+sqlalchemy = "==1.4.48"
 flask-mail = "*"
 flask-socketio = "*"
 python-dotenv = "*"
@@ -17,7 +17,7 @@ passlib = "*"
 cryptography = "*"
 pyotp = "*"
 flask-cors = "*"
-flask-migrate = "*"
+flask-migrate = "==3.1.0"
 
 [dev-packages]
 

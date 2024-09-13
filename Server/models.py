@@ -1,4 +1,4 @@
-from flask_sqlalchemy import SQLAlchemy  # type: ignore
+from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 
 db = SQLAlchemy()
@@ -8,11 +8,10 @@ class Manager(db.Model):
     __tablename__ = 'manager'
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(100), nullable=False, unique=True)
-    # phone = db.Column(db.String(20), nullable=False)
     password = db.Column(db.String(120), nullable=False)
     otp = db.Column(db.String(6), nullable=True) 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    name = db.Column(db.String(100), nullable=False)  # Add this line
+    name = db.Column(db.String(100), nullable=False)
 
     estates = db.relationship('Estate', backref='manager', lazy=True)
 
@@ -44,7 +43,6 @@ class Tenant(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(100), nullable=False, unique=True)
-    phone = db.Column(db.String(20), nullable=False)
     house_id = db.Column(db.Integer, db.ForeignKey('house.id'), nullable=False)
 
     payments = db.relationship('Payment', backref='tenant', lazy=True)
@@ -105,7 +103,6 @@ class CheckIn(db.Model):
     check_out_time = db.Column(db.DateTime, nullable=True)
     staff_id = db.Column(db.Integer, db.ForeignKey('staff.id'), nullable=False)
 
-
 class Request(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     body = db.Column(db.String(500), nullable=False)
@@ -142,19 +139,3 @@ class Message(db.Model):
             'body': self.body,
             'created_at': self.created_at.isoformat()
         }
-    
-# class CheckIn(db.Model):
-#     id = db.Column(db.Integer, primary_key=True)
-#     staff_id = db.Column(db.Integer, db.ForeignKey('staff.id'), nullable=False)
-#     check_in_time = db.Column(db.DateTime, nullable=True)
-#     check_out_time = db.Column(db.DateTime, nullable=True)
-
-#     staff = db.relationship('Staff', backref=db.backref('checkins', lazy=True))
-
-#     def to_dict(self):
-#         return {
-#             'id': self.id,
-#             'staff_id': self.staff_id,
-#             'check_in_time': self.check_in_time,
-#             'check_out_time': self.check_out_time
-#         }

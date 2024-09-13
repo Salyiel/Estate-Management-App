@@ -3,7 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_bcrypt import Bcrypt
 from flask_mail import Mail, Message
-from flask_socketio import SocketIO, emit
+from flask_socketio import SocketIO
 from datetime import datetime
 from flask_cors import CORS
 import os
@@ -29,7 +29,7 @@ db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 bcrypt = Bcrypt(app)
 mail = Mail(app)
-socketio = SocketIO(app,  cors_allowed_origins="http://localhost:3000")
+socketio = SocketIO(app, cors_allowed_origins="http://localhost:3000")
 
 # Import models
 from models import Manager, Estate, House, Tenant, Staff, Request, Task, Payment, Receipt, CheckIn, MaintenanceRequest, Message, CommentFeedback
@@ -39,15 +39,13 @@ from models import Manager, Estate, House, Tenant, Staff, Request, Task, Payment
 def welcome():
     return jsonify({'message': 'Welcome to the Estate Management App!'})
 
-# Other routes
-
 # Route to create manager
 @app.route('/manager', methods=['POST'])
 def create_manager():
     data = request.get_json()
-    if not data or 'email' not in data or 'phone' not in data:
+    if not data or 'email' not in data or 'name' not in data:
         return jsonify({'message': 'Invalid data'}), 400
-    new_manager = Manager(email=data['email'], phone=data['phone'])
+    new_manager = Manager(email=data['email'], name=data['name'])
     db.session.add(new_manager)
     db.session.commit()
     return jsonify({'message': 'Manager created successfully'}), 201
@@ -60,19 +58,17 @@ def signup():
     # Extracting data from the request
     email = data.get('email')
     password = data.get('password')
-    position = data.get('position')
 
     # User creation logic
     new_user = Manager(
         email=email, 
         password=bcrypt.generate_password_hash(password).decode('utf-8'), 
-        # phone=data.get('phone'),  # Ensure phone is also included in request data
+        name=data.get('name')  # Ensure 'name' is provided
     )
     db.session.add(new_user)
     db.session.commit()
 
     return jsonify({'message': 'User created successfully'}), 201
-
 
 # OTP generation function
 def generate_otp():
@@ -95,7 +91,7 @@ def send_otp():
         msg.body = f'Your OTP is {otp}'
         mail.send(msg)
 
-        # Store the OTP in the database or cache (here we simulate it with an in-memory variable)
+        # Store the OTP in the database or cache
         manager = Manager.query.filter_by(email=email).first()
         if manager:
             manager.otp = otp  # Store OTP temporarily
@@ -232,13 +228,12 @@ def get_maintenance_requests():
 def create_payment():
     data = request.get_json()
 
-    if not data or 'amount' not in data or 'date' not in data or 'paymentType' not in data:
-        return jsonify({'error': 'Amount, date, and paymentType are required'}), 400
+    if not data or 'amount' not in data or 'date' not in data:
+        return jsonify({'error': 'Amount and date are required'}), 400
 
     new_payment = Payment(
         amount=data['amount'],
-        date=data['date'],
-        payment_type=data['paymentType']
+        date=data['date']
     )
     db.session.add(new_payment)
     db.session.commit()
@@ -246,26 +241,25 @@ def create_payment():
     return jsonify({
         'id': new_payment.id,
         'amount': new_payment.amount,
-        'date': new_payment.date,
-        'paymentType': new_payment.payment_type
+        'date': new_payment.date
     }), 201
 
 # Message routes
 @app.route('/messages', methods=['GET'])
 def get_messages():
     messages = Message.query.all()
-    messages_list = [{'id': message.id, 'content': message.content, 'author': message.author, 'timestamp': message.timestamp} for message in messages]
+    messages_list = [{'id': message.id, 'body': message.body, 'created_at': message.created_at.isoformat()} for message in messages]
     return jsonify(messages_list), 200
 
 @app.route('/messages', methods=['POST'])
 def post_message():
     data = request.get_json()
-    new_message = Message(content=data['content'], author=data['author'], timestamp=datetime.utcnow())
+    new_message = Message(body=data['body'], created_at=datetime.utcnow())
     db.session.add(new_message)
     db.session.commit()
 
     # Notify via SocketIO
-    socketio.emit('new_message', {'content': new_message.content, 'author': new_message.author, 'timestamp': new_message.timestamp.strftime('%Y-%m-%d %H:%M:%S')})
+    socketio.emit('new_message', {'body': new_message.body, 'created_at': new_message.created_at.isoformat()})
     return jsonify({'message': 'Message posted successfully'}), 201
 
 # Comment Feedback route
