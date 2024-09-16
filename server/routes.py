@@ -402,7 +402,15 @@ def get_tenants():
 @app.route('/staff-list', methods=['GET'])
 def get_staff():
     staff = User.query.filter_by(position='employee').all()
-    staff_list = [{'id': member.id, 'name': member.name, 'shift': member.work_schedules[0].working_days, 'hoursWorked': sum([cio.time_worked.total_seconds() / 3600 for cio in member.check_in_outs])} for member in staff]
+    staff_list = [
+        {
+            'id': member.id,
+            'name': member.name,
+            'shift': member.work_schedules[0].working_days if member.work_schedules else 'No schedule available',
+            'hoursWorked': sum([cio.time_worked.total_seconds() / 3600 for cio in member.check_in_outs])
+        }
+        for member in staff
+    ]
     return jsonify(staff_list)
 
 
@@ -507,7 +515,7 @@ def sign_out():
     session.pop('user_id', None)
     session.pop('user_name', None)
 
-    # Optionally, you can add a flash message for the sign-out action
+    # Optionally, flash message for the sign-out action
     flash('You have been signed out.', 'success')
 
     # Redirect to the sign-in page
