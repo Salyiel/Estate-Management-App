@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import '../styles/Dashboards.css';
 import { CSVLink } from 'react-csv';
 import axios from 'axios';
+import SignOutButton from '../components/SignOutButton';
 
 const ManagerReports = () => {
   const [tenantData, setTenantData] = useState([]);
@@ -64,6 +65,7 @@ const ManagerReports = () => {
           <li><Link to="/staff-management">Staff Management</Link></li>
           <li><Link to="/maintenance-management">Maintenance Management</Link></li>
           <li><Link to="/manager-reports">Reports</Link></li>
+          <li><SignOutButton /></li>
         </ul>
       </nav>
 

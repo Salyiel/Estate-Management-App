@@ -1,28 +1,59 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import SignOutButton from '../components/SignOutButton';
 
 const CommentsFeedbacks = () => {
   const [feedback, setFeedback] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [hasUnreadNotifications, setHasUnreadNotifications] = useState(false);
+
+  const fetchNotifications = async () => {
+    const userId = localStorage.getItem('user_id');
+    
+    try {
+      // Check for unread notifications
+      const notificationsResponse = await axios.get('http://localhost:5555/notifications/unread', {
+        params: { user_id: userId }
+      });
+      console.log("Notifications Response:", notificationsResponse.data);
+      setHasUnreadNotifications(notificationsResponse.data.length > 0);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      // Optionally, set error state for notifications
+      setError('Failed to load notifications');
+    }
+  };
+
+  fetchNotifications()
 
   const handleFeedbackSubmit = async (e) => {
     e.preventDefault();
 
-    try {
-      const token = localStorage.getItem('access_token'); // Adjust if using different method for token storage
+    // Get user information from local storage
+    const userId = localStorage.getItem('user_id');
+    const userName = localStorage.getItem('user_name');
 
+    console.log("Retrieved user_id:", userId); // Debugging line
+    console.log("Retrieved user_name:", userName); // Debugging lin
+
+    try {
       const response = await axios.post(
         '/api/feedback',
-        { feedback },
+        { feedback, user_id: userId, user_name: userName },
         {
           headers: {
-            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         }
       );
+
+      // Check for unread notifications
+      const notificationsResponse = await axios.get('http://localhost:5555/notifications/unread', {
+        params: { user_id: userId }
+      });
+      setHasUnreadNotifications(notificationsResponse.data.length > 0);
 
       setMessage(response.data.message);
       setFeedback(""); // Clear feedback input
@@ -42,7 +73,12 @@ const CommentsFeedbacks = () => {
             <li><Link to="/payment">Payments</Link></li>
             <li><Link to="/request">Requests</Link></li>
             <li><Link to="/comment">Comments & Feedbacks</Link></li>
-            <li><Link to="/notification">Notifications</Link></li>
+            <li>
+              <Link to="/notification">
+                Notifications {hasUnreadNotifications && <span className="notification-icon">🔔</span>}
+              </Link>
+            </li>
+            <li><SignOutButton /></li>
         </ul>
       </nav>
 

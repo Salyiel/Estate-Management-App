@@ -100,3 +100,31 @@ body {
     font-size: 16px;
   }
   
+  .notification-icon {
+    color: red;
+    font-weight: bold;
+    margin-left: 5px;
+  }
+  
+.loading-indicator {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh; 
+}
+
+.house-icon {
+  width: 60px;
+  height: 60px;
+  fill: #3498db;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}

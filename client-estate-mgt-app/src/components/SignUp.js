@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom"; // Import useNavigate
+import { useNavigate, Link } from "react-router-dom"; // Import Link for navigation
 import '../styles/SignUp.css';
 
 const SignUp = () => {
@@ -7,13 +7,14 @@ const SignUp = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [position, setPosition] = useState("tenant");
+  const [phone, setPhone] = useState("");
 
   const navigate = useNavigate(); // Initialize useNavigate
 
   const handleSubmit = (e) => {
     e.preventDefault();
   
-    const userData = { name, email, password, position }; // Include phone if necessary
+    const userData = { name, email, password, position, phone }; // Include phone if necessary
     console.log("Sign Up:", userData);
   
     fetch("/signup", {
@@ -73,6 +74,17 @@ const SignUp = () => {
             />
           </div>
           <div className="form-group">
+            <label htmlFor="phone">Phone</label>
+            <input
+              type="phone"
+              id="phone"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="Phone"
+              required
+            />
+          </div>
+          <div className="form-group">
             <label htmlFor="position">Position</label>
             <select
               id="position"
@@ -87,6 +99,9 @@ const SignUp = () => {
           </div>
           <button type="submit">Sign Up</button>
         </form>
+        <p className="sign-in-link">
+          Already have an account? <Link to="/signin">Sign In</Link>
+        </p>
       </div>
     </div>
   );

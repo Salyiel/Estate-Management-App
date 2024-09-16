@@ -2,27 +2,62 @@ import React, { useEffect, useState } from 'react';
 import '../styles/TenantDashboard.css';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import SignOutButton from './SignOutButton';
 
 const TenantDashboard = () => {
   const [tenantInfo, setTenantInfo] = useState({});
-  const [paymentHistory, setPaymentHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [hasUnreadNotifications, setHasUnreadNotifications] = useState(false);
+
 
   useEffect(() => {
-    // Fetch tenant information and payment history from the backend
     const fetchTenantData = async () => {
+      const userId = localStorage.getItem("user_id");
+
+      console.log("Retrieved user_id:", userId); // Debugging line
+
+      if (!userId) {
+        setError("User ID not found");
+        setLoading(false);
+        return;
+      }
+
       try {
-        const tenantResponse = await axios.get('/tenants'); // Replace with the correct endpoint
+        const tenantResponse = await axios.get('http://localhost:5555/tenants', {
+          params: { user_id: userId }
+        });
+        console.log('Tenant data:', tenantResponse.data); // Debugging line
         setTenantInfo(tenantResponse.data);
 
-        const paymentResponse = await axios.get('/payments'); // Replace with the correct endpoint
-        setPaymentHistory(paymentResponse.data);
+        // Check for unread notifications
+        const notificationsResponse = await axios.get('http://localhost:5555/notifications/unread', {
+          params: { user_id: userId }
+        });
+        setHasUnreadNotifications(notificationsResponse.data.length > 0);
+
+        setLoading(false);
       } catch (error) {
         console.error('Error fetching tenant data:', error);
+        setError('Failed to load tenant details');
+        setLoading(false);
       }
     };
 
     fetchTenantData();
   }, []);
+
+  if (loading) {
+    return (
+      <div className="loading-indicator">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="house-icon">
+          <path d="M12 3l10 9h-3v9h-6v-6h-2v6H5v-9H2l10-9z" />
+        </svg>
+      </div>
+    );
+  }  
+  
+  if (error) return <p>{error}</p>;
 
   return (
     <div className="container">
@@ -33,7 +68,12 @@ const TenantDashboard = () => {
           <li><Link to="/payment">Payments</Link></li>
           <li><Link to="/request">Requests</Link></li>
           <li><Link to="/comment">Comments & Feedbacks</Link></li>
-          <li><Link to="/notification">Notifications</Link></li>
+          <li>
+            <Link to="/notification">
+              Notifications {hasUnreadNotifications && <span className="notification-icon">🔔</span>}
+            </Link>
+          </li>
+          <li><SignOutButton /></li>
         </ul>
       </nav>
 
@@ -67,9 +107,9 @@ const TenantDashboard = () => {
               </tr>
             </thead>
             <tbody>
-              {paymentHistory.length > 0 ? (
-                paymentHistory.map(payment => (
-                  <tr key={payment.id}>
+              {tenantInfo.payment_history && tenantInfo.payment_history.length > 0 ? (
+                tenantInfo.payment_history.map((payment, index) => (
+                  <tr key={index}>
                     <td>{payment.date}</td>
                     <td>{payment.description}</td>
                     <td>${payment.amount}</td>

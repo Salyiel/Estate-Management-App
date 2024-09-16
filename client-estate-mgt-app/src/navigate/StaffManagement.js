@@ -1,25 +1,21 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import axios from 'axios';
+import { Link } from 'react-router-dom';
 import '../styles/Pages.css';
+import SignOutButton from '../components/SignOutButton';
 
 const StaffManagement = () => {
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
   useEffect(() => {
     const fetchStaff = async () => {
       try {
-        const response = await axios.get('/staff', {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('accessToken')}` // Add JWT token if required
-          }
-        });
+        const response = await axios.get('/staff-list'); // Adjust the URL to match your API endpoint
         setStaff(response.data);
+        setLoading(false);
       } catch (error) {
-        setError('Failed to fetch staff data');
-      } finally {
+        console.error('Error fetching staff:', error);
         setLoading(false);
       }
     };
@@ -28,8 +24,15 @@ const StaffManagement = () => {
   }, []);
 
   if (loading) {
-    return <p>Loading...</p>;
+    return (
+      <div className="loading-indicator">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="house-icon">
+          <path d="M12 3l10 9h-3v9h-6v-6h-2v6H5v-9H2l10-9z" />
+        </svg>
+      </div>
+    );
   }
+
 
   return (
     <div className="container">
@@ -40,7 +43,9 @@ const StaffManagement = () => {
           <li><Link to="/tenant-management">Tenant Management</Link></li>
           <li><Link to="/staff-management">Staff Management</Link></li>
           <li><Link to="/maintenance-management">Maintenance Management</Link></li>
+          <li><Link to="/manager-feedback">Feedback</Link></li>
           <li><Link to="/manager-reports">Reports</Link></li>
+          <li><SignOutButton /></li>
         </ul>
       </nav>
 
@@ -48,29 +53,24 @@ const StaffManagement = () => {
       <div className="main-content">
         <div className="card">
           <h2>Staff Management</h2>
-          {error && <p className="text-red-500">{error}</p>}
           <table>
             <thead>
               <tr>
+                <th>ID</th>
                 <th>Staff</th>
                 <th>Shift</th>
                 <th>Hours Worked</th>
               </tr>
             </thead>
             <tbody>
-              {staff.length > 0 ? (
-                staff.map((staffMember) => (
-                  <tr key={staffMember.id}>
-                    <td>{staffMember.name}</td>
-                    <td>{staffMember.shift}</td>
-                    <td>{staffMember.hoursWorked}</td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="3">No staff data available</td>
+              {staff.map(member => (
+                <tr key={member.id}>
+                  <td>{member.id}</td>
+                  <td>{member.name}</td>
+                  <td>{member.shift}</td>
+                  <td>{member.hoursWorked.toFixed(2)} hours</td>
                 </tr>
-              )}
+              ))}
             </tbody>
           </table>
         </div>
